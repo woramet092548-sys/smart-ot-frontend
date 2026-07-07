@@ -1,0 +1,64 @@
+// ไฟล์: src/utils/holidays.js (ฝั่ง FRONTEND)
+// [Phase 3.1] วันหยุดราชการไทย — สำเนาฝั่ง frontend สำหรับแสดงในปฏิทิน MyOT
+//   ⚠️⚠️ สำคัญ: ไฟล์นี้เป็น "สำเนา" ของ backend/src/config/holidays.js
+//   ถ้าแก้/เพิ่มวันหยุดที่นี่ ต้องไปแก้ไฟล์ backend ด้วย (และกลับกัน) ให้ตรงกันเสมอ
+//   ที่มา: ปฏิทินวันหยุดราชการ 2569
+
+// key = 'YYYY-MM-DD' (ค.ศ.) → ชื่อวันหยุด
+const HOLIDAYS = {
+  // ───────── ปี 2569 (2026) ─────────
+  '2026-01-01': 'วันขึ้นปีใหม่',
+  '2026-01-02': 'วันหยุดพิเศษ',
+  '2026-03-03': 'วันมาฆบูชา',
+  '2026-04-06': 'วันจักรี',
+  '2026-04-13': 'วันสงกรานต์',
+  '2026-04-14': 'วันสงกรานต์',
+  '2026-04-15': 'วันสงกรานต์',
+  '2026-05-01': 'วันแรงงานแห่งชาติ',
+  '2026-05-04': 'วันฉัตรมงคล',
+  '2026-05-13': 'วันพืชมงคล',
+  '2026-05-31': 'วันวิสาขบูชา',
+  '2026-06-01': 'วันหยุดชดเชยวันวิสาขบูชา',
+  '2026-06-03': 'วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าฯ พระบรมราชินี',
+  '2026-07-28': 'วันเฉลิมพระชนมพรรษา ร.10',
+  '2026-07-29': 'วันอาสาฬหบูชา',
+  '2026-07-30': 'วันเข้าพรรษา',
+  '2026-08-12': 'วันแม่แห่งชาติ',
+  '2026-10-13': 'วันคล้ายวันสวรรคต ร.9',
+  '2026-10-23': 'วันปิยมหาราช',
+  '2026-12-05': 'วันพ่อแห่งชาติ',
+  '2026-12-07': 'วันหยุดชดเชยวันพ่อแห่งชาติ',
+  '2026-12-10': 'วันรัฐธรรมนูญ',
+  '2026-12-31': 'วันสิ้นปี',
+};
+
+// แปลง Date → 'YYYY-MM-DD' (อิงเวลาท้องถิ่น กัน timezone shift)
+const toKey = (dateInput) => {
+  const d = (dateInput instanceof Date) ? dateInput : new Date(dateInput);
+  if (isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+// คืนชื่อวันหยุดนักขัตฤกษ์ (ถ้ามี), ไม่ใช่ → null
+export const getHolidayName = (dateInput) => {
+  const key = toKey(dateInput);
+  if (!key) return null;
+  return HOLIDAYS[key] || null;
+};
+
+// คืน "ป้ายเหตุผล" วันหยุด — นักขัตฤกษ์→ชื่อ, เสาร์/อาทิตย์→วันเสาร์/วันอาทิตย์, วันธรรมดา→null
+export const getDayOffLabel = (dateInput) => {
+  const name = getHolidayName(dateInput);
+  if (name) return name;
+  const d = (dateInput instanceof Date) ? dateInput : new Date(dateInput);
+  if (isNaN(d.getTime())) return null;
+  const wd = d.getDay();
+  if (wd === 0) return 'วันอาทิตย์';
+  if (wd === 6) return 'วันเสาร์';
+  return null;
+};
+
+export { HOLIDAYS };
