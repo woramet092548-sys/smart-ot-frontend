@@ -1,3 +1,5 @@
+// ไฟล์: src/pages/ImportExcel.jsx
+// [CSV] ให้เลือกไฟล์ .csv ได้ด้วย (เดิมรับแค่ .xlsx/.xls) — backend รองรับ .csv อยู่แล้ว
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -107,7 +109,7 @@ const ImportExcel = () => {
         <div className="mb-8 border-b pb-6">
           <h2 className="text-2xl font-bold text-gray-800 flex items-center">
             <FileSpreadsheet className="mr-3 text-emerald-500" size={28} />
-            นำเข้าข้อมูลเวลาปฏิบัติงาน (Import Excel)
+            นำเข้าข้อมูลเวลาปฏิบัติงาน (Import Excel / CSV)
           </h2>
           <p className="text-gray-500 mt-2">
             สำหรับฝ่ายบุคคล (HR) นำเข้าไฟล์ข้อมูลการสแกนนิ้วจากเครื่องลงเวลา
@@ -135,10 +137,11 @@ const ImportExcel = () => {
                 <h3 className="text-lg font-semibold text-gray-700 mb-2">
                   ลากไฟล์มาวางที่นี่ หรือ คลิกเพื่อเลือกไฟล์
                 </h3>
-                <p className="text-sm text-gray-500 mb-6">รองรับไฟล์ .xlsx, .xls (ไฟล์จากเครื่องสแกนนิ้ว)</p>
-                <input type="file" id="file-upload" accept=".xlsx,.xls" className="hidden" onChange={handleFileChange} />
+                {/* [CSV] เพิ่ม .csv ในข้อความ + ใน accept ของช่องเลือกไฟล์ */}
+                <p className="text-sm text-gray-500 mb-6">รองรับไฟล์ .xlsx, .xls, .csv (ไฟล์จากเครื่องสแกนนิ้ว)</p>
+                <input type="file" id="file-upload" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFileChange} />
                 <label htmlFor="file-upload" className="cursor-pointer bg-white border border-gray-300 text-gray-700 px-6 py-2.5 rounded-full font-medium hover:bg-gray-50 transition shadow-sm">
-                  เลือกไฟล์ Excel
+                  เลือกไฟล์ Excel / CSV
                 </label>
                 {selectedFile && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}

@@ -24,9 +24,10 @@ import {
   CheckCircle2, // [Phase E] ไอคอนในปุ่มยืนยัน
 } from "lucide-react";
 
-// [Phase 2.7] ค่าคงที่กฎ OT (ให้ตรงกับ backend upload.routes.js) — ใช้คำนวณเหตุผลฝั่งหน้าจอ
+// [Phase 2.7] ค่าคงที่กฎ OT (ให้ตรงกับ backend src/config/ot-rules.js) — ใช้คำนวณเหตุผลฝั่งหน้าจอ
+// [17:00] อาจารย์ยืนยันเวลาเลิกงานปกติ = 17:00
 const OT_RULE = {
-  WORK_END_TIME: "16:00", // เวลาเลิกงานปกติ (วันธรรมดานับ OT จากเวลานี้)
+  WORK_END_TIME: "17:00", // เวลาเลิกงานปกติ (วันธรรมดานับ OT จากเวลานี้)
 };
 
 export default function MyOT() {

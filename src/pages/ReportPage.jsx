@@ -70,7 +70,81 @@ export default function ReportPage() {
     } catch (error) {
       console.error("Download error:", error);
       if (error.response?.status === 404) {
-        alert("ไม่พบข้อมูล OT ของพนักงานคนนี้ในเดือนที่เลือก");
+        // [ฟอร์มราชการ] ฟอร์มดึงเฉพาะรายการที่ ผอ. อนุมัติแล้ว
+        alert("ไม่พบข้อมูล OT ที่ ผอ. อนุมัติแล้ว ของพนักงานคนนี้ในเดือนที่เลือก");
+      } else {
+        alert("เกิดข้อผิดพลาดในการสร้างเอกสาร หรือเซิร์ฟเวอร์ขัดข้อง");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ─────────────────────────────────────────────────────────────
+  // [ฟอร์มราชการ] ดาวน์โหลดใบขวาง (หลักฐานการเบิกจ่าย)
+  //   - all = true → ทุกคนในเดือนนั้น (HR/การเงิน/admin เท่านั้น)
+  //   - all = false → คนที่เลือกใน dropdown (หรือตัวเองถ้าเป็น user)
+  // ─────────────────────────────────────────────────────────────
+  const handleDownloadPaymentForm = async (all = false) => {
+    const empId = all ? "ALL" : (canSelectEmployee ? selectedEmp : user?.empId);
+    if (!empId) {
+      alert("กรุณาเลือกพนักงาน");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const res = await api.get(
+        `/report/payment-form?empId=${empId}&month=${month}&year=${year}`,
+        { responseType: "blob" }
+      );
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `ใบขวาง_${all ? "ทุกคน" : empId}_${month}_${year}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download error:", error);
+      if (error.response?.status === 404) {
+        alert("ไม่พบข้อมูล OT ที่ ผอ. อนุมัติแล้ว ในเดือนที่เลือก");
+      } else {
+        alert("เกิดข้อผิดพลาดในการสร้างเอกสาร หรือเซิร์ฟเวอร์ขัดข้อง");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ─────────────────────────────────────────────────────────────
+  // [ฟอร์มราชการ] ดาวน์โหลดใบภาระงาน (ข้อมูลจากหน้า "ภาระงานรายเดือน")
+  //   - ถ้าพนักงานยังไม่กดยืนยัน PDF จะมีลายน้ำ "ฉบับร่าง"
+  // ─────────────────────────────────────────────────────────────
+  const handleDownloadDutyForm = async () => {
+    const empId = canSelectEmployee ? selectedEmp : user?.empId;
+    if (!empId) {
+      alert("กรุณาเลือกพนักงาน");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const res = await api.get(
+        `/duty/pdf?empId=${empId}&month=${month}&year=${year}`,
+        { responseType: "blob" }
+      );
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `ใบภาระงาน_${empId}_${month}_${year}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download error:", error);
+      if (error.response?.status === 404) {
+        alert("พนักงานคนนี้ยังไม่ได้กรอกภาระงานของเดือนที่เลือก");
       } else {
         alert("เกิดข้อผิดพลาดในการสร้างเอกสาร หรือเซิร์ฟเวอร์ขัดข้อง");
       }
@@ -147,7 +221,7 @@ export default function ReportPage() {
               className="flex-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
             >
               {employees.length === 0 ? (
-                <option value="">— ไม่มีพนักงานที่มี OT ในเดือนนี้ —</option>
+                <option value="">— ไม่มีพนักงานที่มี OT อนุมัติแล้วในเดือนนี้ —</option>
               ) : (
                 employees.map((emp) => (
                   <option key={emp.empId} value={emp.empId}>
@@ -186,48 +260,64 @@ export default function ReportPage() {
             </button>
           </div>
 
-          {/* Card 2 — ใบเบิกจ่าย (ยังเป็น report เดิม รอแปลงเป็นฟอร์มจริง) */}
+          {/* [ฟอร์มราชการ] Card 2 — ใบขวาง (หลักฐานการเบิกจ่าย) ตามฟอร์มจริงปี 2569 */}
           <div className="bg-white p-6 rounded-xl shadow-sm border hover:shadow-md transition-shadow relative">
-            <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-600">
-              ยังเป็นแบบเดิม
-            </span>
             <div className="flex items-start gap-3 mb-4">
               <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
                 <Receipt size={22} className="text-emerald-600" />
               </div>
               <div>
-                <h3 className="font-bold text-lg text-emerald-700">2. หลักฐานการเบิกจ่าย</h3>
-                <p className="text-gray-500 text-sm mt-1">แบบฟอร์มเบิกเงิน (ขั้นต่อไปจะแปลงเป็นฟอร์มจริง)</p>
+                <h3 className="font-bold text-lg text-emerald-700">2. หลักฐานการเบิกจ่าย (ใบขวาง)</h3>
+                <p className="text-gray-500 text-sm mt-1">
+                  ตารางชั่วโมง OT รายวัน + ยอดเงิน ตามแบบฟอร์มราชการจริง
+                  {!canSelectEmployee && " (ของคุณ)"}
+                </p>
               </div>
             </div>
-            <button
-              onClick={() => handleDownloadLegacy(2, "pdf")}
-              disabled={isLoading}
-              className="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 disabled:bg-gray-400 transition-colors"
-            >
-              {isLoading ? "กำลังโหลด..." : "ดาวน์โหลด PDF (เดิม)"}
-            </button>
+            <div className={canSelectEmployee ? "grid grid-cols-2 gap-2" : ""}>
+              <button
+                onClick={() => handleDownloadPaymentForm(false)}
+                disabled={isLoading || (canSelectEmployee && !selectedEmp)}
+                className="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 disabled:bg-gray-400 transition-colors flex items-center justify-center gap-2 text-sm font-semibold"
+              >
+                <Download size={15} />
+                {isLoading ? "กำลังสร้าง..." : (canSelectEmployee ? "คนที่เลือก" : "ดาวน์โหลด (PDF)")}
+              </button>
+              {/* ทุกคนในไฟล์เดียว — เฉพาะ HR/การเงิน/admin */}
+              {canSelectEmployee && (
+                <button
+                  onClick={() => handleDownloadPaymentForm(true)}
+                  disabled={isLoading || employees.length === 0}
+                  className="w-full bg-emerald-800 text-white py-2 rounded-lg hover:bg-emerald-900 disabled:bg-gray-400 transition-colors flex items-center justify-center gap-2 text-sm font-semibold"
+                >
+                  <Users size={15} />
+                  {isLoading ? "กำลังสร้าง..." : "ทุกคน (ไฟล์เดียว)"}
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Card 3 — ใบภาระงาน (placeholder รอทำ) */}
+          {/* [ฟอร์มราชการ] Card 3 — ใบภาระงาน ตามฟอร์มจริง (ข้อมูลจากหน้าภาระงานรายเดือน) */}
           <div className="bg-white p-6 rounded-xl shadow-sm border hover:shadow-md transition-shadow relative">
-            <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500">
-              เร็วๆ นี้
-            </span>
             <div className="flex items-start gap-3 mb-4">
               <div className="w-11 h-11 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
                 <FileText size={22} className="text-purple-600" />
               </div>
               <div>
                 <h3 className="font-bold text-lg text-purple-700">3. ใบรายงานภาระงาน</h3>
-                <p className="text-gray-500 text-sm mt-1">สรุปภาระงานที่ทำช่วง OT ทั้งเดือน</p>
+                <p className="text-gray-500 text-sm mt-1">
+                  ผลการปฏิบัติงานที่กรอกในหน้า "ภาระงานรายเดือน"
+                  {!canSelectEmployee && " (ของคุณ)"}
+                </p>
               </div>
             </div>
             <button
-              disabled
-              className="w-full bg-gray-300 text-white py-2 rounded-lg cursor-not-allowed"
+              onClick={handleDownloadDutyForm}
+              disabled={isLoading || (canSelectEmployee && !selectedEmp)}
+              className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 transition-colors flex items-center justify-center gap-2 text-sm font-semibold"
             >
-              อยู่ระหว่างพัฒนา
+              <Download size={15} />
+              {isLoading ? "กำลังสร้าง..." : "ดาวน์โหลดใบภาระงาน (PDF)"}
             </button>
           </div>
 
@@ -262,9 +352,11 @@ export default function ReportPage() {
         {/* หมายเหตุ */}
         <div className="bg-amber-50 border border-amber-100 p-4 rounded-lg flex items-start gap-3">
           <span className="text-amber-500">⚠️</span>
+          {/* [ฟอร์มราชการ] อัปเดตหมายเหตุ: ฟอร์มดึงเฉพาะรายการที่อนุมัติแล้ว + ใส่ลายเซ็นอัตโนมัติ */}
           <p className="text-xs text-amber-800">
-            ใบลงเวลา (ข้อ 1) ดึงข้อมูลทุกสถานะ (ยกเว้นที่ HR ยกเลิก) เพื่อใช้ทดสอบช่วงพัฒนา
-            ภายหลังจะปรับให้ดึงเฉพาะรายการที่ "อนุมัติ" แล้วเมื่อระบบ flow อนุมัติเสร็จสมบูรณ์
+            ใบลงเวลา (ข้อ 1) และใบขวาง (ข้อ 2) ดึงเฉพาะรายการที่ ผอ. "อนุมัติ" แล้วเท่านั้น
+            ใบลงเวลาใส่รูปลายเซ็นของพนักงานให้อัตโนมัติ (ถ้ายังไม่ได้อัปโหลดลายเซ็นที่หน้าลายเซ็น ช่องลายมือชื่อจะเว้นว่าง)
+            — ใบภาระงาน (ข้อ 3) ถ้าพนักงานยังไม่กดยืนยัน จะมีลายน้ำ "ฉบับร่าง"
           </p>
         </div>
       </div>

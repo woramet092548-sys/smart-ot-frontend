@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../utils/api";
 import PageTransition from "../components/PageTransition";
@@ -9,10 +9,13 @@ import {
   Save, ShieldCheck,
   ClipboardList,
   Lock, AlertCircle, Info,
+  FileDown,   // [ฟอร์มราชการ] ไอคอนปุ่ม PDF
+  LockOpen, Users, // [ปลดล็อก] ไอคอนส่วนของ HR/admin
 } from "lucide-react";
 
 // [Phase D] ค่าคงที่ — backend คืนค่าจริงผ่าน config (เผื่อปรับทีหลัง)
-const DEFAULT_MAX_LINES = 18;
+// [ฟอร์มราชการ] ฟอร์มจริงมี 20 แถว (เดิม 18)
+const DEFAULT_MAX_LINES = 20;
 const DEFAULT_CHARS_PER_LINE = 65;
 
 // helper: นับบรรทัดของข้อความ (รวม line-wrap)
@@ -40,11 +43,47 @@ export default function DutyReport() {
 
   const isLocked = status === 'locked';
 
+  // [ปลดล็อก] HR/admin เห็นตารางภาระงานของทุกคน + ปุ่มปลดล็อก
+  const canManage = ["hr", "admin"].includes(user?.role);
+  const [staffReports, setStaffReports] = useState([]);
+  const [staffLoading, setStaffLoading] = useState(false);
+
   // โหลดข้อมูลภาระงานของเดือนปัจจุบัน
   useEffect(() => {
     fetchDuty();
+    if (canManage) fetchStaffReports(); // [ปลดล็อก]
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [month, year]);
+
+  // [ปลดล็อก] โหลดรายการภาระงานของทุกคนในเดือนนี้ (HR/admin)
+  const fetchStaffReports = async () => {
+    setStaffLoading(true);
+    try {
+      const res = await api.get(`/duty/all?month=${month}&year=${year}`);
+      setStaffReports(res.data || []);
+    } catch (err) {
+      console.error("Error fetching staff duty:", err);
+      setStaffReports([]);
+    } finally {
+      setStaffLoading(false);
+    }
+  };
+
+  // [ปลดล็อก] กดปลดล็อกภาระงานของพนักงาน → กลับเป็นฉบับร่าง
+  const handleUnlock = async (emp) => {
+    if (!window.confirm(
+      `ปลดล็อกภาระงานของ ${emp.fullname} (${emp.empId}) เดือน ${monthName}?\nพนักงานจะกลับไปแก้ไขได้ และต้องกดยืนยันใหม่อีกครั้ง`
+    )) return;
+    try {
+      const res = await api.post('/duty/unlock', { empId: emp.empId, month, year });
+      alert(res.data.message || "ปลดล็อกเรียบร้อย");
+      fetchStaffReports();
+      if (emp.empId === user?.empId) fetchDuty(); // ปลดล็อกของตัวเอง → รีเฟรชด้านบนด้วย
+    } catch (err) {
+      console.error("Unlock error:", err);
+      alert(err.response?.data?.message || "ปลดล็อกไม่สำเร็จ");
+    }
+  };
 
   const fetchDuty = async () => {
     setLoading(true);
@@ -77,6 +116,10 @@ export default function DutyReport() {
   // ─────────────────────────────────────────────────────────────
   // CRUD ข้อ
   // ─────────────────────────────────────────────────────────────
+  // [เพิ่มข้อ] ref ของช่องพิมพ์แต่ละข้อ + ข้อที่ต้องเลื่อนไปหา/โฟกัสหลังเพิ่ม
+  const textareaRefs = useRef([]);
+  const [focusIndex, setFocusIndex] = useState(null);
+
   const handleAddItem = () => {
     if (isLocked) return;
     if (totalLines >= config.maxLines) {
@@ -84,7 +127,31 @@ export default function DutyReport() {
       return;
     }
     setItems([...items, { no: items.length + 1, text: "" }]);
+    setFocusIndex(items.length); // ข้อใหม่อยู่ท้ายสุด
   };
+
+  // [เพิ่มข้อ] พอข้อใหม่แสดงบนจอแล้ว → เลื่อนหน้าจอไปที่ข้อนั้น + วางเคอร์เซอร์ให้พิมพ์ได้ทันที
+  useEffect(() => {
+    if (focusIndex === null) return;
+    const el = textareaRefs.current[focusIndex];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.focus({ preventScroll: true });
+    }
+    setFocusIndex(null);
+  }, [focusIndex, items.length]);
+
+  // [เพิ่มข้อ] ปุ่ม "เพิ่มข้อ" ใช้ซ้ำทั้งด้านบนและด้านล่างรายการ
+  const renderAddButton = () => (
+    <button
+      onClick={handleAddItem}
+      disabled={remaining <= 0}
+      className="w-full bg-white border-2 border-dashed border-slate-300 hover:border-blue-400 hover:bg-blue-50/30 rounded-xl py-3 text-sm font-bold text-slate-500 hover:text-blue-600 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+    >
+      <Plus size={16} />
+      เพิ่มข้อ
+    </button>
+  );
 
   const handleRemoveItem = (idx) => {
     if (isLocked) return;
@@ -157,6 +224,39 @@ export default function DutyReport() {
     }
   };
 
+  // ─────────────────────────────────────────────────────────────
+  // [ฟอร์มราชการ] ดู/ดาวน์โหลด PDF ใบภาระงาน
+  //   - ยังไม่ยืนยัน → บันทึกฉบับร่างให้ก่อน แล้วได้ PDF ที่มีลายน้ำ "ฉบับร่าง" ไว้รีวิว
+  //   - ยืนยันแล้ว → ได้ PDF ตัวจริง
+  // ─────────────────────────────────────────────────────────────
+  const handleDownloadPdf = async () => {
+    const cleaned = items.filter(it => it.text.trim() !== "");
+    if (cleaned.length === 0) {
+      alert("กรุณากรอกอย่างน้อย 1 ข้อ");
+      return;
+    }
+    setSaving(true);
+    try {
+      // บันทึกของล่าสุดก่อน (PDF จะได้ตรงกับที่เห็นบนจอ)
+      if (!isLocked) await api.put('/duty', { month, year, items: cleaned });
+      const res = await api.get(`/duty/pdf?month=${month}&year=${year}`, { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `ใบภาระงาน${isLocked ? "" : "_ฉบับร่าง"}_${month}_${year}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      if (!isLocked) fetchDuty();
+    } catch (err) {
+      console.error("PDF error:", err);
+      alert("สร้าง PDF ไม่สำเร็จ กรุณาลองใหม่");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <PageTransition>
       <div className="max-w-5xl mx-auto px-4 py-4 space-y-4">
@@ -203,7 +303,7 @@ export default function DutyReport() {
               <p className="font-bold text-emerald-800 text-sm">ภาระงานเดือนนี้ถูกยืนยันแล้ว</p>
               <p className="text-xs text-emerald-700 mt-1">
                 ยืนยันเมื่อ: {lockedAt ? new Date(lockedAt).toLocaleString("th-TH") : '-'} —
-                ไม่สามารถแก้ไขได้ (หากต้องการแก้ไข กรุณาติดต่อแอดมิน)
+                ไม่สามารถแก้ไขได้ (หากต้องการแก้ไข กรุณาติดต่อ HR หรือแอดมินให้ปลดล็อก)
               </p>
             </div>
           </motion.div>
@@ -237,17 +337,8 @@ export default function DutyReport() {
           </div>
         </div>
 
-        {/* ปุ่ม Add */}
-        {!isLocked && (
-          <button
-            onClick={handleAddItem}
-            disabled={remaining <= 0}
-            className="w-full bg-white border-2 border-dashed border-slate-300 hover:border-blue-400 hover:bg-blue-50/30 rounded-xl py-3 text-sm font-bold text-slate-500 hover:text-blue-600 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Plus size={16} />
-            เพิ่มข้อ
-          </button>
-        )}
+        {/* ปุ่ม Add (ด้านบน) */}
+        {!isLocked && renderAddButton()}
 
         {/* รายการข้อ */}
         <div className="space-y-3">
@@ -276,6 +367,7 @@ export default function DutyReport() {
 
                   <div className="flex-1 space-y-2">
                     <textarea
+                      ref={(el) => { textareaRefs.current[idx] = el; }}
                       value={item.text}
                       onChange={(e) => handleChangeText(idx, e.target.value)}
                       disabled={isLocked}
@@ -304,6 +396,9 @@ export default function DutyReport() {
           </AnimatePresence>
         </div>
 
+        {/* [เพิ่มข้อ] ปุ่ม Add (ด้านล่าง) — ไม่ต้องเลื่อนขึ้นไปกดด้านบน (แสดงเมื่อมีข้ออยู่แล้ว) */}
+        {!isLocked && items.length > 0 && renderAddButton()}
+
         {/* ปุ่ม Action */}
         {!isLocked && items.length > 0 && (
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
@@ -326,6 +421,18 @@ export default function DutyReport() {
           </div>
         )}
 
+        {/* [ฟอร์มราชการ] ปุ่ม PDF — ยังไม่ยืนยัน = ดูตัวอย่าง (ฉบับร่าง), ยืนยันแล้ว = ตัวจริง */}
+        {items.length > 0 && (
+          <button
+            onClick={handleDownloadPdf}
+            disabled={saving || isOverLimit}
+            className="w-full bg-white border border-blue-200 text-blue-700 font-bold text-sm py-3 rounded-xl hover:bg-blue-50 transition-all shadow-sm disabled:opacity-40 flex items-center justify-center gap-2"
+          >
+            <FileDown size={16} />
+            {isLocked ? "ดาวน์โหลดใบภาระงาน (PDF)" : "ดูตัวอย่าง PDF ก่อนยืนยัน (ฉบับร่าง)"}
+          </button>
+        )}
+
         {/* คำเตือนเกิน */}
         {isOverLimit && (
           <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-start gap-2">
@@ -334,6 +441,73 @@ export default function DutyReport() {
               รวมบรรทัดเกินขีดจำกัด ({totalLines}/{config.maxLines}) —
               กรุณาลดข้อความบางส่วนก่อนบันทึก
             </p>
+          </div>
+        )}
+
+        {/* [ปลดล็อก] ตารางภาระงานของพนักงานทุกคน — เฉพาะ HR/admin */}
+        {canManage && (
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 mt-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Users size={18} className="text-indigo-500" />
+              <h2 className="font-bold text-slate-700 text-sm">
+                ภาระงานของพนักงาน — {monthName}
+              </h2>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-600">
+                เฉพาะ HR / แอดมิน
+              </span>
+            </div>
+
+            {staffLoading ? (
+              <p className="text-xs text-slate-400 py-4 text-center">กำลังโหลด...</p>
+            ) : staffReports.length === 0 ? (
+              <p className="text-xs text-slate-400 py-4 text-center">ยังไม่มีพนักงานกรอกภาระงานของเดือนนี้</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs text-slate-500 border-b">
+                      <th className="py-2 pr-2">พนักงาน</th>
+                      <th className="py-2 pr-2 text-center">บรรทัด</th>
+                      <th className="py-2 pr-2 text-center">สถานะ</th>
+                      <th className="py-2 text-right"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {staffReports.map((emp) => {
+                      const locked = emp.status === 'locked';
+                      return (
+                        <tr key={emp.empId} className="border-b last:border-0">
+                          <td className="py-2 pr-2">
+                            <p className="font-medium text-slate-700">{emp.fullname}</p>
+                            <p className="text-[10px] text-slate-400">{emp.empId}</p>
+                          </td>
+                          <td className="py-2 pr-2 text-center text-slate-600">
+                            {emp.total_lines}/{config.maxLines}
+                          </td>
+                          <td className="py-2 pr-2 text-center">
+                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded
+                              ${locked ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                              {locked ? 'ยืนยันแล้ว' : 'ฉบับร่าง'}
+                            </span>
+                          </td>
+                          <td className="py-2 text-right">
+                            {locked && (
+                              <button
+                                onClick={() => handleUnlock(emp)}
+                                className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 hover:bg-rose-50 px-2.5 py-1.5 rounded-lg transition-all"
+                              >
+                                <LockOpen size={14} />
+                                ปลดล็อก
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>
