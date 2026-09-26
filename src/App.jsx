@@ -13,7 +13,7 @@ import { AuthProvider } from "./context/AuthContext";
 
 // Pages
 import Login from "./pages/Login";
-import Register from "./pages/Register";
+// import Register from "./pages/Register";   // [ปิดสมัคร] ไม่มีการสมัครเอง (ข้อมูลบุคลากรมาจากมหาวิทยาลัย) — เก็บไฟล์ไว้เผื่อใช้
 import MyOT from "./pages/MyOT";
 import ReportPage from "./pages/ReportPage";
 import ApproveOT from "./pages/ApproveOT";
@@ -72,7 +72,8 @@ export default function App() {
               {/* Public */}
               <Route path="/" element={<Navigate to="/login" />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+              {/* [ปิดสมัคร] ใครเข้า /register ให้เด้งกลับหน้า login */}
+              <Route path="/register" element={<Navigate to="/login" replace />} />
 
               {/* พนักงานทั่วไป */}
               <Route path="/my-ot" element={<ProtectedRoute><MyOT /></ProtectedRoute>} />

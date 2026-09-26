@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";   // [ปิดสมัคร] เอา Link ออก (ไม่มีลิงก์ไปหน้าสมัครแล้ว)
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../utils/api";
 import PageTransition from "../components/PageTransition";
@@ -127,8 +127,9 @@ export default function Login() {
             </form>
 
             <div className="mt-8 text-center border-t border-gray-100 pt-6">
-              <p className="text-sm text-gray-600">
-                ยังไม่มีบัญชีใช่ไหม? <Link to="/register" className="font-bold text-[#1e3a8a] hover:text-blue-600 hover:underline transition">ลงทะเบียนพนักงานใหม่</Link>
+              {/* [ปิดสมัคร] เดิมเป็นลิงก์ "ลงทะเบียนพนักงานใหม่" — บัญชีมาจากข้อมูลบุคลากรของมหาวิทยาลัย */}
+              <p className="text-sm text-gray-500">
+                หากเข้าใช้งานไม่ได้ กรุณาติดต่อฝ่ายบุคคล
               </p>
             </div>
           </div>
