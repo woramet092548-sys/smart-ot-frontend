@@ -397,7 +397,7 @@ function DailyTab() {
 
   // กดคืนค่า
   const handleRestore = async (record) => {
-    if (!window.confirm(`ต้องการคืนค่ารายการของ "${record.fullname}" กลับเป็น "รออนุมัติ" ใช่หรือไม่?`))
+    if (!window.confirm(`ต้องการคืนค่ารายการของ "${record.fullname}" กลับเป็น "รอยืนยัน" ใช่หรือไม่?`))
       return;
 
     setActionId(record.id);
@@ -409,7 +409,7 @@ function DailyTab() {
 
       if (res.ok) {
         setRecords(prev => prev.map(r =>
-          r.id === record.id ? { ...r, status: 'รออนุมัติ' } : r
+          r.id === record.id ? { ...r, status: 'รอยืนยัน' } : r   // [สถานะ] ตรงกับที่ backend ตั้งจริง
         ));
       } else {
         const data = await res.json();
@@ -443,7 +443,12 @@ function DailyTab() {
   // Status pill
   const statusPill = (status) => {
     const map = {
-      'รออนุมัติ': 'bg-amber-50 text-amber-600 border-amber-100',
+      // [สถานะ] สีเดียวกับปฏิทินหน้าโอทีของฉัน (เดิมมีแค่ 'รออนุมัติ' → สถานะใน flow อนุมัติขึ้นเป็นสีเทาหมด)
+      'รอยืนยัน': 'bg-orange-50 text-orange-600 border-orange-100',
+      'รอหัวหน้า': 'bg-amber-50 text-amber-600 border-amber-100',
+      'รอการเงิน': 'bg-sky-50 text-sky-600 border-sky-100',
+      'รอผอ.': 'bg-violet-50 text-violet-600 border-violet-100',
+      'รออนุมัติ': 'bg-amber-50 text-amber-600 border-amber-100',   // ชื่อเก่า (ข้อมูลก่อนรัน SQL เปลี่ยนชื่อ)
       'อนุมัติ': 'bg-emerald-50 text-emerald-600 border-emerald-100',
       'ไม่อนุมัติ': 'bg-rose-50 text-rose-600 border-rose-100',
       [HR_CANCEL_STATUS]: 'bg-slate-100 text-slate-500 border-slate-200',

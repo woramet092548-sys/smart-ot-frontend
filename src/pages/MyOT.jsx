@@ -616,7 +616,8 @@ export default function MyOT() {
                         </div>
                       )}
 
-                      {isPending(selectedDate.status) && (
+                      {/* [สถานะ] ปุ่มนี้ใช้กับคำขอ OT แบบกรอกเอง (ระบบเก่า) เท่านั้น — รายการ import ยกเลิกผ่านปุ่มนี้ไม่ได้อยู่แล้ว (backend ตอบ error) จึงไม่ต้องโชว์ */}
+                      {isPending(selectedDate.status) && selectedDate.source === 'manual' && (
                         <button
                           onClick={() => handleCancelOT(selectedDate.id)}
                           className="w-full text-rose-500 py-1 rounded-lg font-bold text-[10px] hover:bg-rose-50 transition-colors uppercase tracking-wider"
