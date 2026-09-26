@@ -6,27 +6,9 @@ import {
   CalendarPlus, X, Trash2, Check, Loader2, StickyNote
 } from "lucide-react";
 import api from "../utils/api";
+import { getHolidayName } from "../utils/holidays"; // [วันหยุด] ไฟล์กลาง
 
-const HOLIDAYS = {
-  "1-1": { name: "ขึ้นปีใหม่", isHoliday: true },
-  "2-26": { name: "มาฆบูชา", isHoliday: true },
-  "4-6": { name: "วันจักรี", isHoliday: true },
-  "4-13": { name: "สงกรานต์", isHoliday: true },
-  "4-14": { name: "สงกรานต์", isHoliday: true },
-  "4-15": { name: "สงกรานต์", isHoliday: true },
-  "5-1": { name: "แรงงาน", isHoliday: true },
-  "5-4": { name: "ฉัตรมงคล", isHoliday: true },
-  "5-22": { name: "วิสาขบูชา", isHoliday: true },
-  "6-3": { name: "เฉลิมฯ ราชินี", isHoliday: true },
-  "7-20": { name: "อาสาฬหบูชา", isHoliday: true },
-  "7-28": { name: "เฉลิมฯ ร.10", isHoliday: true },
-  "8-12": { name: "วันแม่", isHoliday: true },
-  "10-13": { name: "ร.9", isHoliday: true },
-  "10-23": { name: "ปิยมหาราช", isHoliday: true },
-  "12-5": { name: "วันพ่อ", isHoliday: true },
-  "12-10": { name: "รัฐธรรมนูญ", isHoliday: true },
-  "12-31": { name: "สิ้นปี", isHoliday: true },
-};
+// [วันหยุด] ใช้รายการกลางจาก utils/holidays.js (อิงปีจริง) แทนรายการเดิมที่ฝังไว้ในหน้านี้ (วันที่ไม่ตรงปี)
 
 export default function ShiftSchedule() {
   const now = new Date();
@@ -149,7 +131,11 @@ export default function ShiftSchedule() {
     }
   };
 
-  const getHoliday = (day) => HOLIDAYS[`${currentMonth}-${day}`];
+  // [วันหยุด] คืน { name, isHoliday } ถ้าวันนั้นเป็นวันหยุดนักขัตฤกษ์ — ไม่ใช่ → null (รูปแบบเดิม ส่วนแสดงผลไม่ต้องแก้)
+  const getHoliday = (day) => {
+    const name = getHolidayName(new Date(currentYear, currentMonth - 1, day));
+    return name ? { name, isHoliday: true } : null;
+  };
 
   const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
   const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();

@@ -6,15 +6,9 @@ import {
   Plus, X, Trash2, Check, Loader2, Users
 } from "lucide-react";
 import api from "../utils/api";
+import { getHolidayName } from "../utils/holidays"; // [วันหยุด] ไฟล์กลาง
 
-const HOLIDAYS = {
-  "1-1": "ขึ้นปีใหม่", "2-26": "มาฆบูชา", "4-6": "วันจักรี",
-  "4-13": "สงกรานต์", "4-14": "สงกรานต์", "4-15": "สงกรานต์",
-  "5-1": "แรงงาน", "5-4": "ฉัตรมงคล", "5-22": "วิสาขบูชา",
-  "6-3": "เฉลิมฯ ราชินี", "7-20": "อาสาฬหบูชา", "7-28": "เฉลิมฯ ร.10",
-  "8-12": "วันแม่", "10-13": "ร.9", "10-23": "ปิยมหาราช",
-  "12-5": "วันพ่อ", "12-10": "รัฐธรรมนูญ", "12-31": "สิ้นปี",
-};
+// [วันหยุด] ใช้รายการกลางจาก utils/holidays.js (อิงปีจริง) แทนรายการเดิมที่ฝังไว้ในหน้านี้ (วันที่ไม่ตรงปี)
 
 export default function SpecialEvents() {
   const now = new Date();
@@ -226,7 +220,7 @@ export default function SpecialEvents() {
               <div className="grid grid-cols-7 gap-1">
                 {calendarDays.map((day, idx) => {
                   const dayEvents = day ? getEventsForDay(day) : [];
-                  const holiday = day ? HOLIDAYS[`${currentMonth}-${day}`] : null;
+                  const holiday = day ? getHolidayName(new Date(currentYear, currentMonth - 1, day)) : null; // [วันหยุด]
                   const isToday = day === now.getDate() && currentMonth === now.getMonth() + 1 && currentYear === now.getFullYear();
                   const isSelected = day === selectedDay;
 
