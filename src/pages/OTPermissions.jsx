@@ -6,6 +6,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import PageTransition from "../components/PageTransition";
+import { API_BASE } from "../utils/api"; // [deploy] ที่อยู่ API จากไฟล์ .env (เดิมเขียน localhost:5000 ตายตัว)
 import {
   ToggleLeft,
   ToggleRight,
@@ -90,7 +91,7 @@ function PermanentTab() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/users/permissions", {
+      const res = await fetch(`${API_BASE}/users/permissions`, {
         headers: { "Authorization": `Bearer ${getToken()}` }
       });
       if (res.ok) {
@@ -120,7 +121,7 @@ function PermanentTab() {
 
     setTogglingId(user.id);
     try {
-      const res = await fetch(`http://localhost:5000/api/users/${user.id}/can-do-ot`, {
+      const res = await fetch(`${API_BASE}/users/${user.id}/can-do-ot`, {
         method: 'PATCH',
         headers: {
           "Authorization": `Bearer ${getToken()}`,
@@ -335,7 +336,7 @@ function DailyTab() {
         month: filterMonth,
         year: filterYear,
       }).toString();
-      const res = await fetch(`http://localhost:5000/api/ot-records?${params}`, {
+      const res = await fetch(`${API_BASE}/ot-records?${params}`, {
         headers: { "Authorization": `Bearer ${getToken()}` }
       });
       if (res.ok) {
@@ -369,7 +370,7 @@ function DailyTab() {
 
     setActionId(record.id);
     try {
-      const res = await fetch(`http://localhost:5000/api/ot-records/${record.id}/cancel-by-hr`, {
+      const res = await fetch(`${API_BASE}/ot-records/${record.id}/cancel-by-hr`, {
         method: 'PATCH',
         headers: {
           "Authorization": `Bearer ${getToken()}`,
@@ -401,7 +402,7 @@ function DailyTab() {
 
     setActionId(record.id);
     try {
-      const res = await fetch(`http://localhost:5000/api/ot-records/${record.id}/restore`, {
+      const res = await fetch(`${API_BASE}/ot-records/${record.id}/restore`, {
         method: 'PATCH',
         headers: { "Authorization": `Bearer ${getToken()}` }
       });

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import PageTransition from "../components/PageTransition";
 import { useAuth } from "../context/AuthContext";
+import { API_BASE } from "../utils/api"; // [deploy] ที่อยู่ API จากไฟล์ .env (เดิมเขียน localhost:5000 ตายตัว)
 import { getHolidayName, getDayOffLabel } from "../utils/holidays"; // [Phase 3.1]
 import {
   ChevronLeft,
@@ -62,7 +63,7 @@ export default function MyOT() {
   const fetchOTRecords = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/ot/my", {
+      const res = await fetch(`${API_BASE}/ot/my`, {
         headers: { "Authorization": `Bearer ${getToken()}` }
       });
       if (res.ok) {
@@ -79,7 +80,7 @@ export default function MyOT() {
   const handleCancelOT = async (id) => {
     if (!window.confirm("คุณต้องการยกเลิกรายการโอทีนี้ใช่หรือไม่?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/ot/${id}`, {
+      const res = await fetch(`${API_BASE}/ot/${id}`, {
         method: 'DELETE',
         headers: { "Authorization": `Bearer ${getToken()}` }
       });
@@ -93,7 +94,7 @@ export default function MyOT() {
   const handleSaveReport = async (id, source) => {
     if (!id) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/ot/${id}/report`, {
+      const res = await fetch(`${API_BASE}/ot/${id}/report`, {
         method: 'PUT',
         headers: {
           "Authorization": `Bearer ${getToken()}`,
@@ -122,7 +123,7 @@ export default function MyOT() {
 
     setConfirming(true);
     try {
-      const res = await fetch("http://localhost:5000/api/approvals/confirm", {
+      const res = await fetch(`${API_BASE}/approvals/confirm`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${getToken()}`,

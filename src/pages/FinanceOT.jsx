@@ -131,7 +131,8 @@ const handleExport = async (type) => {
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
                     className="px-2 py-1.5 bg-transparent text-sm font-medium focus:outline-none cursor-pointer text-gray-700"
                 >
-                    {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y + 543}</option>)}
+                    {/* [deploy] ปีคำนวณจากปีปัจจุบัน (ย้อน 2 ปี ถึงปีหน้า) — เดิมเขียนตายตัว 2024–2027 */}
+                    {[-2, -1, 0, 1].map(d => new Date().getFullYear() + d).map(y => <option key={y} value={y}>{y + 543}</option>)}
                 </select>
             </div>
 
