@@ -1,6 +1,7 @@
 // ไฟล์: src/pages/Profile.jsx
 // [โปรไฟล์] หน้าโปรไฟล์พนักงาน — ทุก role เข้าได้ ดูได้เฉพาะของตัวเอง
 //   - รูปโปรไฟล์: อัป/เปลี่ยน/ลบได้เอง (.png/.jpg ไม่เกิน 2 MB)
+//     [รูปจาก SSO] ถ้า backend ตั้ง PROFILE_PHOTO_SOURCE=sso (ส่ง photo_source = "sso") → ซ่อนปุ่ม แสดงรูปจาก SSO อย่างเดียว
 //   - ข้อมูลชื่อ/อีเมล/รหัสพนักงาน: ดูอย่างเดียว (มาจากฝ่ายบุคคล / อนาคตมาจาก SSO ของมหาวิทยาลัย)
 //   - ลายเซ็น: ดูรูปที่อัปไว้ (เดิมอัปแล้วมองไม่เห็นอีกเลย) + ลิงก์ไปหน้าลายเซ็นถ้ายังไม่อัป
 //   รูปดึงผ่าน API ที่ต้อง login (แนบ token) → ใช้ axios แบบ blob แล้วแปลงเป็น URL ชั่วคราว
@@ -179,32 +180,43 @@ export default function Profile() {
             <h1 className="text-2xl font-black text-slate-800 tracking-tight break-words">{displayName(profile)}</h1>
             <p className="text-sm font-medium text-slate-400 mt-1">{roleLabel(profile.role)} · {profile.empId}</p>
 
-            {profile.photo_supported ? (
-              <div className="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
-                <input ref={fileRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={handlePickPhoto} />
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => fileRef.current?.click()}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 disabled:bg-slate-300 transition-all active:scale-95"
-                >
-                  <Camera size={16} /> {profile.has_photo ? "เปลี่ยนรูป" : "อัปโหลดรูป"}
-                </button>
-                {profile.has_photo && (
+            {!profile.photo_supported ? (
+              <p className="mt-4 text-xs text-slate-400">ยังเปิดใช้รูปโปรไฟล์ไม่ได้ (ผู้ดูแลระบบต้องตั้งค่าฐานข้อมูลก่อน)</p>
+            ) : profile.photo_source === "sso" ? (
+              // [รูปจาก SSO] รูปมาจากระบบของมหาวิทยาลัย — ไม่มีปุ่มอัป/ลบ
+              <div className="mt-4 flex items-start gap-2 justify-center sm:justify-start text-xs text-slate-400">
+                <Info size={14} className="shrink-0 mt-0.5" />
+                <span>
+                  รูปโปรไฟล์ดึงมาจากระบบ SSO ของมหาวิทยาลัย
+                  {!profile.has_photo && " (ยังไม่มีรูปในระบบของมหาวิทยาลัย)"}
+                </span>
+              </div>
+            ) : (
+              <>
+                <div className="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
+                  <input ref={fileRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={handlePickPhoto} />
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={handleDeletePhoto}
-                    className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-xl hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 disabled:opacity-50 transition-all active:scale-95"
+                    onClick={() => fileRef.current?.click()}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 disabled:bg-slate-300 transition-all active:scale-95"
                   >
-                    <Trash2 size={16} /> ลบรูป
+                    <Camera size={16} /> {profile.has_photo ? "เปลี่ยนรูป" : "อัปโหลดรูป"}
                   </button>
-                )}
-              </div>
-            ) : (
-              <p className="mt-4 text-xs text-slate-400">ยังเปิดใช้รูปโปรไฟล์ไม่ได้ (ผู้ดูแลระบบต้องตั้งค่าฐานข้อมูลก่อน)</p>
+                  {profile.has_photo && (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={handleDeletePhoto}
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-xl hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 disabled:opacity-50 transition-all active:scale-95"
+                    >
+                      <Trash2 size={16} /> ลบรูป
+                    </button>
+                  )}
+                </div>
+                <p className="mt-2 text-[11px] text-slate-400">รูป .png หรือ .jpg ไม่เกิน {MAX_PHOTO_MB} MB</p>
+              </>
             )}
-            <p className="mt-2 text-[11px] text-slate-400">รูป .png หรือ .jpg ไม่เกิน {MAX_PHOTO_MB} MB</p>
           </div>
         </div>
 
