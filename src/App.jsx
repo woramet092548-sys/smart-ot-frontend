@@ -27,6 +27,7 @@ import ShiftSchedule from "./pages/ShiftSchedule";    // [Phase 2.2]
 import SpecialEvents from "./pages/SpecialEvents";    // [Phase 2.4]
 import DutyReport from "./pages/DutyReport";          // [Phase D]
 import AdminApproveOT from "./pages/AdminApproveOT";
+import Profile from "./pages/Profile";                // [โปรไฟล์]
 
 export default function App() {
   const location = useLocation();
@@ -80,6 +81,8 @@ export default function App() {
               <Route path="/claim-ot" element={<Navigate to="/my-ot" replace />} />
               <Route path="/report" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
               <Route path="/signature" element={<ProtectedRoute><Signature /></ProtectedRoute>} />
+              {/* [โปรไฟล์] ทุก role — เห็นเฉพาะของตัวเอง */}
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/duty-report" element={<ProtectedRoute><DutyReport /></ProtectedRoute>} />
 
               {/* หัวหน้าฝ่าย / Admin */}

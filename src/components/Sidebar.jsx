@@ -109,13 +109,19 @@ const buildMenu = (role) => {
     icon: <FileText size={18} />,
   });
 
-  // 6. ลายเซ็น (standalone - แยกออกมาท้ายสุด มี divider ด้านบน)
+  // 6. [โปรไฟล์] โปรไฟล์ของฉัน + ลายเซ็น (แยกออกมาท้ายสุด มี divider ด้านบน)
+  menu.push({
+    type: 'single',
+    name: "โปรไฟล์",
+    path: "/profile",
+    icon: <UserCircle size={18} />,
+    divider: true, // เส้นแบ่งด้านบนตัวนี้
+  });
   menu.push({
     type: 'single',
     name: "ลายเซ็น",
     path: "/signature",
     icon: <PenTool size={18} />,
-    divider: true, // เส้นแบ่งด้านบนตัวนี้
   });
 
   return menu;
@@ -194,8 +200,9 @@ export default function Sidebar() {
       </div>
 
       {/* User mini-card */}
+      {/* [โปรไฟล์] กดการ์ดผู้ใช้ → ไปหน้าโปรไฟล์ */}
       {!collapsed ? (
-        <div className="mx-3 mt-3 p-3 bg-slate-50/70 rounded-xl border border-slate-100 flex items-center gap-3">
+        <Link to="/profile" title="โปรไฟล์ของฉัน" className="mx-3 mt-3 p-3 bg-slate-50/70 rounded-xl border border-slate-100 flex items-center gap-3 hover:border-blue-200 hover:bg-blue-50/40 transition-colors">
           <div className="relative shrink-0">
             <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-slate-100 to-white flex items-center justify-center text-slate-400 border-2 border-white shadow-sm">
               <UserCircle size={22} />
@@ -210,16 +217,16 @@ export default function Sidebar() {
               {roleLabel(user?.role)}
             </p>
           </div>
-        </div>
+        </Link>
       ) : (
-        <div className="mx-auto mt-3 relative" title={`${user?.fullname || ''} (${roleLabel(user?.role)})`}>
+        <Link to="/profile" className="mx-auto mt-3 relative block w-10" title={`${user?.fullname || ''} (${roleLabel(user?.role)})`}>
           <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-slate-100 to-white flex items-center justify-center text-slate-400 border-2 border-white shadow-sm">
             <UserCircle size={22} />
           </div>
           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-100">
             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
           </div>
-        </div>
+        </Link>
       )}
 
       {/* Menu */}
